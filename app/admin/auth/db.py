@@ -5,7 +5,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 # SQLALCHEMY_DATABASE_URL = 'sqlite:///{}'.format(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "db.sqlite3"))
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:root@43.129.74.20:3306/oa"  # MySQL或PostgreSQL的连接方法
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:root@10.0.8.2:3306/oa"  # MySQL或PostgreSQL的连接方法
 
 Engine = create_engine(
     # echo=True表示引擎将用repr()函数记录所有语句及其参数列表到日志
