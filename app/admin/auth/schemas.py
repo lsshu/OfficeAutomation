@@ -27,3 +27,16 @@ class AuthUserOut(User):
 
     class Config:
         orm_mode = True
+
+
+class AuthSubjects(BaseModel):
+    """
+    主体对象
+    """
+    name: str
+    domain: str
+    available: bool
+    # expires_time:
+
+    class Config:
+        orm_mode = True

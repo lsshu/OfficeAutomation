@@ -2,9 +2,8 @@ from fastapi import Depends, Security, HTTPException
 from fastapi.security import SecurityScopes, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 
-from app.admin.auth.defs import read_config, token_verify_password, token_payload
+from .defs import read_config, token_verify_password, token_payload, hashids_encode, hashids_decode, dbs
 from .schemas import AuthUserOut, User, TokenData
-from .defs import hashids_encode, hashids_decode
 
 SECRET_KEY = read_config('oauth', 'SECRET_KEY')
 ALGORITHM = read_config('oauth', 'ALGORITHM')
@@ -15,8 +14,8 @@ HASHIDS_LENGTH = read_config('oauth', 'HASHIDS_LENGTH')
 HASHIDS_ALPHABET = read_config('oauth', 'HASHIDS_ALPHABET')
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="token",
-    scopes={"me": "Read information about the current user.", "items": "Read items."}
+    tokenUrl="/api/admin/auth/token",
+    scopes={"admin": "all permissions."}
 )
 
 
@@ -33,6 +32,8 @@ def authenticate_user(db: Session, username: str, password: str):
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     hashids = hashids_encode(user.id, salt=HASHIDS_SALT, min_length=HASHIDS_LENGTH, alphabet=HASHIDS_ALPHABET)
+    if not user.sub_id:
+        raise HTTPException(status_code=400, detail="Incorrect sub")
     sub_hashids = hashids_encode(user.sub_id, salt=HASHIDS_SALT, min_length=HASHIDS_LENGTH, alphabet=HASHIDS_ALPHABET)
     user = AuthUserOut(**user.to_dict(), hashids=hashids, sub_hashids=sub_hashids)
     if not token_verify_password(plain_password=password, hashed_password=user.password):
@@ -81,8 +82,19 @@ async def current_user_security(security_scopes: SecurityScopes, token: str = De
                               alphabet=HASHIDS_ALPHABET)
     sub_id, = hashids_decode(payload['sub_hashids'], salt=HASHIDS_SALT, min_length=HASHIDS_LENGTH,
                              alphabet=HASHIDS_ALPHABET)
+    """处理授权用户实时情况"""
+    # Todo
+    """处理授权用户实时情况"""
     return TokenData(**payload, username=payload['sub'], user_id=user_id, sub_id=sub_id)
 
 
-async def current_user(user: User = Security(current_user_security, scopes=['me'])):
+async def auth_user(user: TokenData = Security(current_user_security, scopes=['admin']), db: Session = Depends(dbs)):
+    """
+    demo
+    :param user:
+    :param db:
+    :return:
+    """
+    from .crud import auth_user_by_username_and_available
+    user = auth_user_by_username_and_available(db=db, username=user.username)
     return user
