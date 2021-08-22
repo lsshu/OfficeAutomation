@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
-from .ages.schemas import MemberAgeGroupCreate, MemberAgeGroupUpdate
-from .models import MemberAgeGroup
+from .schemas import MemberAgeGroupCreate, MemberAgeGroupUpdate
+from ..models import MemberAgeGroup
 
 
 def get_ages(db: Session, skip: int = 0, limit: int = 10, sub_id=None):

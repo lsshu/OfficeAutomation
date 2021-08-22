@@ -11,6 +11,7 @@ except:
 
 
 class RegionCompany(Model):
+    """区域公司"""
     __tablename__ = "region_companies"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     sub_id = Column(Integer, ForeignKey('auth_subjects.id'), comment='主体pk')
@@ -22,6 +23,7 @@ class RegionCompany(Model):
 
 
 class RegionDivision(Model):
+    """区域事业部"""
     __tablename__ = "region_divisions"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     sub_id = Column(Integer, ForeignKey('auth_subjects.id'), comment='主体pk')
@@ -33,6 +35,7 @@ class RegionDivision(Model):
 
 
 class RegionMarket(Model):
+    """区域市场"""
     __tablename__ = "region_markets"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     sub_id = Column(Integer, ForeignKey('auth_subjects.id'), comment='主体pk')

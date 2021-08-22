@@ -24,7 +24,7 @@ async def ages(db: Session = Depends(dbs), user: TokenData = Security(current_us
     :param limit:
     :return:
     """
-    from ..crud import get_paginate_ages
+    from .crud import get_paginate_ages
     return get_paginate_ages(db=db, skip=skip, limit=limit, sub_id=user.sub_id)
 
 
@@ -38,7 +38,7 @@ async def create_age(age: MemberAgeGroupCreate, db: Session = Depends(dbs),
     :param user:
     :return:
     """
-    from ..crud import create_age, get_age_by_name
+    from .crud import create_age, get_age_by_name
     age = verification_sub_id(age, user)
     db_age = get_age_by_name(db=db, name=age.name)
     if db_age:
@@ -56,7 +56,7 @@ async def get_age(pk: int, db: Session = Depends(dbs),
     :param user:
     :return:
     """
-    from ..crud import get_age_by_pk
+    from .crud import get_age_by_pk
     db_age = get_age_by_pk(db=db, pk=pk, sub_id=user.sub_id)
     if db_age is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Age not found")
@@ -74,7 +74,7 @@ async def update_age(pk: int, age: MemberAgeGroupUpdate, db: Session = Depends(d
     :param user:
     :return:
     """
-    from ..crud import update_age, get_age_by_pk
+    from .crud import update_age, get_age_by_pk
     db_age = get_age_by_pk(db=db, pk=pk, sub_id=user.sub_id)
     if db_age is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Age not found")
@@ -84,5 +84,12 @@ async def update_age(pk: int, age: MemberAgeGroupUpdate, db: Session = Depends(d
 @router.delete("/{pk}")
 async def delete_age(pk: int, db: Session = Depends(dbs),
                      user: TokenData = Security(current_user_security, scopes=scopes)):
-    from ..crud import delete_age
+    """
+    根据pk 删除年龄段
+    :param pk:
+    :param db:
+    :param user:
+    :return:
+    """
+    from .crud import delete_age
     return delete_age(db=db, pk=pk, sub_id=user.sub_id)
