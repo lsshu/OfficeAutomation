@@ -163,3 +163,10 @@ def token_payload(security_scopes, token, key, algorithm):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not enough permissions",
                                 headers={"WWW-Authenticate": authenticate_value})
     return payload
+
+
+def verification_sub_id(mode, user):
+    """验证接收体sub id 与 授权 sub id"""
+    if mode.sub_id:
+        mode.sub_id = user.sub_id
+    return mode
