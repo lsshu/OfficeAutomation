@@ -15,6 +15,7 @@ class MemberAgeGroup(Model):
     """年龄段"""
     __tablename__ = "member_age_groups"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    sec_id = Column(Integer, index=True, comment='次要id')
     sub_id = Column(Integer, ForeignKey('auth_subjects.id'), comment='主体')
     subject = relationship('AuthSubject', backref='member_age_groups')
     name = Column(String(15), nullable=True, comment="名称")
@@ -27,6 +28,7 @@ class MemberSource(Model):
     """添加方式"""
     __tablename__ = "member_sources"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    sec_id = Column(Integer, index=True, comment='次要id')
     sub_id = Column(Integer, ForeignKey('auth_subjects.id'), comment='主体')
     subject = relationship('AuthSubject', backref='member_sources')
     name = Column(String(15), nullable=True, comment="名称")
@@ -39,6 +41,7 @@ class MemberQualityType(Model):
     """粉质量类别"""
     __tablename__ = "member_quality_types"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    sec_id = Column(Integer, index=True, comment='次要id')
     sub_id = Column(Integer, ForeignKey('auth_subjects.id'), comment='主体')
     subject = relationship('AuthSubject', backref='member_quality_types')
     name = Column(String(15), nullable=True, comment="名称")
@@ -51,6 +54,7 @@ class MemberUser(Model):
     """客户信息"""
     __tablename__ = "member_users"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    sec_id = Column(Integer, index=True, comment='次要id')
     sub_id = Column(Integer, ForeignKey('auth_subjects.id'), comment='主体')
     subject = relationship('AuthSubject', backref='member_users')
     com_id = Column(Integer, ForeignKey('region_companies.id'), comment='公司')

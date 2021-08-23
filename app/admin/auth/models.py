@@ -31,6 +31,7 @@ class AuthUser(Model):
     """
     __tablename__ = "auth_users"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    sec_id = Column(Integer, index=True, comment='次要id')
     sub_id = Column(Integer, ForeignKey('auth_subjects.id'), comment='主体pk')
     subject = relationship('AuthSubject', backref='auth_users')  # 关联的类名；back_populates来指定反向访问的属性名称
     # subject = relationship('AuthSubject', back_populates='auth_users')  # 关联的类名；back_populates来指定反向访问的属性名称
@@ -61,6 +62,7 @@ class AuthRoles(Model):
     """
     __tablename__ = "auth_roles"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    sec_id = Column(Integer, index=True, comment='次要id')
     sub_id = Column(Integer, ForeignKey('auth_subjects.id'), comment='主体pk')
     subject = relationship('AuthSubject', backref='auth_roles')
     name = Column(String(15), nullable=False, unique=True, comment="名称")
@@ -82,6 +84,7 @@ class AuthPermissions(Model):
     """
     __tablename__ = "auth_permissions"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    sec_id = Column(Integer, index=True, comment='次要id')
     sub_id = Column(Integer, ForeignKey('auth_subjects.id'), comment='主体pk')
     subject = relationship('AuthSubject', backref='auth_permissions')
     name = Column(String(15), nullable=False, unique=True, comment="名称")
