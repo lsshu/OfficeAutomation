@@ -74,7 +74,7 @@ def get_age_by_name(db: Session, name: str, sub_id=None):
 
 def create_age(db: Session, age: MemberAgeGroupCreate, sub_id=None):
     """
-    创建 年龄
+    创建 年龄段
     :param db:
     :param age:
     :param sub_id:
@@ -89,7 +89,7 @@ def create_age(db: Session, age: MemberAgeGroupCreate, sub_id=None):
 
 def update_age(db: Session, age: MemberAgeGroupUpdate, pk: int, sub_id=None):
     """
-    修改 年龄
+    修改 年龄段
     :param db:
     :param age:
     :param pk:
@@ -109,7 +109,7 @@ def update_age(db: Session, age: MemberAgeGroupUpdate, pk: int, sub_id=None):
 
 def delete_age(db: Session, pk: int, sub_id=None):
     """
-    删除年龄 修改删除时间
+    删除年龄段 修改删除时间
     :param db:
     :param pk:
     :param sub_id:
