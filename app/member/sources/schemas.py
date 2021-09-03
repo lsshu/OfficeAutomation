@@ -1,9 +1,10 @@
-from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional, List
 
+from app.admin.auth.schemas import StatusResponse
 
-class MemberSourceCreate(BaseModel):
+
+class CreateUpdate(BaseModel):
     """创建添加方式"""
     name: str
     sub_id: Optional[int] = None
@@ -12,17 +13,10 @@ class MemberSourceCreate(BaseModel):
         orm_mode = True
 
 
-class MemberSourceUpdate(BaseModel):
-    """更新添加方式"""
-    name: str
-
-    class Config:
-        orm_mode = True
-
-
-class MemberSourceResponse(BaseModel):
+class ModelResponse(BaseModel):
     """添加方式返回"""
-    id: int
+    from datetime import datetime
+    sec_id: int
     name: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -31,10 +25,15 @@ class MemberSourceResponse(BaseModel):
         orm_mode = True
 
 
-class MemberSourcePaginateResponse(BaseModel):
+class ModelStatusResponse(StatusResponse):
+    """添加方式状态返回"""
+    data: ModelResponse
+
+
+class PaginateStatusResponse(StatusResponse):
     """添加方式分页返回"""
-    total: Optional[int] = None
+    count: Optional[int] = None
     pages: Optional[int] = None
     skip: Optional[int] = None
     limit: Optional[int] = None
-    data: List[MemberSourceResponse]
+    data: List[ModelResponse]

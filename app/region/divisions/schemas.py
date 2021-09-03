@@ -1,9 +1,10 @@
-from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional, List
 
+from app.admin.auth.schemas import StatusResponse
 
-class RegionDivisionCreate(BaseModel):
+
+class CreateUpdate(BaseModel):
     """创建区域事业部"""
     name: str
     sub_id: Optional[int] = None
@@ -12,17 +13,10 @@ class RegionDivisionCreate(BaseModel):
         orm_mode = True
 
 
-class RegionDivisionUpdate(BaseModel):
-    """更新区域事业部"""
-    name: str
-
-    class Config:
-        orm_mode = True
-
-
-class RegionDivisionResponse(BaseModel):
+class ModelResponse(BaseModel):
     """区域事业部返回"""
-    id: int
+    from datetime import datetime
+    sec_id: int
     name: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -31,10 +25,15 @@ class RegionDivisionResponse(BaseModel):
         orm_mode = True
 
 
-class RegionDivisionPaginateResponse(BaseModel):
+class ModelStatusResponse(StatusResponse):
+    """区域事业部状态返回"""
+    data: ModelResponse
+
+
+class PaginateStatusResponse(StatusResponse):
     """区域事业部分页返回"""
-    total: Optional[int] = None
+    count: Optional[int] = None
     pages: Optional[int] = None
     skip: Optional[int] = None
     limit: Optional[int] = None
-    data: List[RegionDivisionResponse]
+    data: List[ModelResponse]

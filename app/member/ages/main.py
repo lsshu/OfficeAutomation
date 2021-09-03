@@ -1,7 +1,9 @@
+from typing import List
+
 from fastapi import APIRouter, Depends, Security, HTTPException, status
 from sqlalchemy.orm import Session
 
-from .schemas import MemberAgeGroupCreate, MemberAgeGroupUpdate, MemberAgeGroupResponse, MemberAgeGroupPaginateResponse
+from .schemas import StatusResponse, CreateUpdate, ModelStatusResponse, PaginateStatusResponse
 from ..defs import verification_sub_id
 
 from ...admin.auth.defs import dbs
@@ -13,23 +15,25 @@ router = APIRouter()
 scopes = ['admin']
 
 
-@router.get('/', response_model=MemberAgeGroupPaginateResponse)
+@router.get('/', response_model=PaginateStatusResponse)
 async def ages(db: Session = Depends(dbs), user: TokenData = Security(current_user_security, scopes=scopes),
-               skip: int = 0, limit: int = 25):
+               page: int = 1, limit: int = 25, name: str = None):
     """
     获取年龄段
     :param db:
     :param user:
-    :param skip:
+    :param page:
     :param limit:
+    :param name:
     :return:
     """
     from .crud import get_paginate_ages
-    return get_paginate_ages(db=db, skip=skip, limit=limit, sub_id=user.sub_id)
+    data, count, pages = get_paginate_ages(db=db, page=page, limit=limit, sub_id=user.sub_id, name=name)
+    return {"data": data, "count": count, "pages": pages, "page": page, "limit": limit}
 
 
-@router.post('/', response_model=MemberAgeGroupResponse)
-async def create_age(age: MemberAgeGroupCreate, db: Session = Depends(dbs),
+@router.post('/', response_model=StatusResponse)
+async def create_age(age: CreateUpdate, db: Session = Depends(dbs),
                      user: TokenData = Security(current_user_security, scopes=scopes)):
     """
     创建年龄段
@@ -43,53 +47,56 @@ async def create_age(age: MemberAgeGroupCreate, db: Session = Depends(dbs),
     db_age = get_age_by_name(db=db, name=age.name)
     if db_age:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Age already registered")
-    return create_age(db=db, age=age)
+    create_age(db=db, age=age)
+    return StatusResponse()
 
 
-@router.get('/{pk}', response_model=MemberAgeGroupResponse)
-async def get_age(pk: int, db: Session = Depends(dbs),
+@router.get('/{sec}', response_model=ModelStatusResponse)
+async def get_age(sec: int, db: Session = Depends(dbs),
                   user: TokenData = Security(current_user_security, scopes=scopes)):
     """
-    根据pk 获取年龄段
-    :param pk:
+    根据sec 获取年龄段
+    :param sec:
     :param db:
     :param user:
     :return:
     """
-    from .crud import get_age_by_pk
-    db_age = get_age_by_pk(db=db, pk=pk, sub_id=user.sub_id)
+    from .crud import get_age_by_sec
+    db_age = get_age_by_sec(db=db, sec=sec, sub_id=user.sub_id)
     if db_age is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Age not found")
-    return db_age
+    return ModelStatusResponse(data=db_age)
 
 
-@router.put("/{pk}", response_model=MemberAgeGroupResponse)
-async def update_age(pk: int, age: MemberAgeGroupUpdate, db: Session = Depends(dbs),
+@router.put("/{sec}", response_model=StatusResponse)
+async def update_age(sec: int, age: CreateUpdate, db: Session = Depends(dbs),
                      user: TokenData = Security(current_user_security, scopes=scopes)):
     """
-    根据pk 修改年龄段内容
-    :param pk:
+    根据sec 修改年龄段内容
+    :param sec:
     :param age:
     :param db:
     :param user:
     :return:
     """
-    from .crud import update_age, get_age_by_pk
-    db_age = get_age_by_pk(db=db, pk=pk, sub_id=user.sub_id)
+    from .crud import update_age, get_age_by_sec
+    db_age = get_age_by_sec(db=db, sec=sec, sub_id=user.sub_id)
     if db_age is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Age not found")
-    return update_age(db=db, age=age, pk=pk, sub_id=user.sub_id)
+    update_age(db=db, age=age, sec=sec, sub_id=user.sub_id)
+    return StatusResponse()
 
 
-@router.delete("/{pk}")
-async def delete_age(pk: int, db: Session = Depends(dbs),
+@router.delete("/", response_model=StatusResponse)
+async def delete_age(sec: List[int], db: Session = Depends(dbs),
                      user: TokenData = Security(current_user_security, scopes=scopes)):
     """
-    根据pk 删除年龄段
-    :param pk:
+    根据sec 删除年龄段
+    :param sec:
     :param db:
     :param user:
     :return:
     """
-    from .crud import delete_age
-    return delete_age(db=db, pk=pk, sub_id=user.sub_id)
+    from .crud import delete_ages
+    delete_ages(db=db, sec=sec, sub_id=user.sub_id)
+    return StatusResponse()

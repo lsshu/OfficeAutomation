@@ -1,8 +1,9 @@
+from typing import List
+
 from fastapi import APIRouter, Depends, Security, HTTPException, status
 from sqlalchemy.orm import Session
 
-from .schemas import RegionDivisionCreate, RegionDivisionUpdate, RegionDivisionResponse, \
-    RegionDivisionPaginateResponse
+from .schemas import StatusResponse, CreateUpdate, ModelStatusResponse, PaginateStatusResponse
 from ..defs import verification_sub_id
 
 from ...admin.auth.defs import dbs
@@ -14,24 +15,26 @@ router = APIRouter()
 scopes = ['admin']
 
 
-@router.get('/', response_model=RegionDivisionPaginateResponse)
+@router.get('/', response_model=PaginateStatusResponse)
 async def divisions(db: Session = Depends(dbs), user: TokenData = Security(current_user_security, scopes=scopes),
-                    skip: int = 0, limit: int = 25):
+                  page: int = 1, limit: int = 25, name: str = None):
     """
     获取区域事业部
     :param db:
     :param user:
-    :param skip:
+    :param page:
     :param limit:
+    :param name:
     :return:
     """
     from .crud import get_paginate_divisions
-    return get_paginate_divisions(db=db, skip=skip, limit=limit, sub_id=user.sub_id)
+    data, count, pages = get_paginate_divisions(db=db, page=page, limit=limit, sub_id=user.sub_id, name=name)
+    return {"data": data, "count": count, "pages": pages, "page": page, "limit": limit}
 
 
-@router.post('/', response_model=RegionDivisionResponse)
-async def create_division(division: RegionDivisionCreate, db: Session = Depends(dbs),
-                          user: TokenData = Security(current_user_security, scopes=scopes)):
+@router.post('/', response_model=StatusResponse)
+async def create_division(division: CreateUpdate, db: Session = Depends(dbs),
+                        user: TokenData = Security(current_user_security, scopes=scopes)):
     """
     创建区域事业部
     :param division:
@@ -44,46 +47,56 @@ async def create_division(division: RegionDivisionCreate, db: Session = Depends(
     db_division = get_division_by_name(db=db, name=division.name)
     if db_division:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Division already registered")
-    return create_division(db=db, division=division)
+    create_division(db=db, division=division)
+    return StatusResponse()
 
 
-@router.get('/{pk}', response_model=RegionDivisionResponse)
-async def get_division(pk: int, db: Session = Depends(dbs),
-                       user: TokenData = Security(current_user_security, scopes=scopes)):
+@router.get('/{sec}', response_model=ModelStatusResponse)
+async def get_division(sec: int, db: Session = Depends(dbs),
+                     user: TokenData = Security(current_user_security, scopes=scopes)):
     """
-    根据pk 获取区域事业部
-    :param pk:
+    根据sec 获取区域事业部
+    :param sec:
     :param db:
     :param user:
     :return:
     """
-    from .crud import get_division_by_pk
-    db_division = get_division_by_pk(db=db, pk=pk, sub_id=user.sub_id)
+    from .crud import get_division_by_sec
+    db_division = get_division_by_sec(db=db, sec=sec, sub_id=user.sub_id)
     if db_division is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Division not found")
-    return db_division
+    return ModelStatusResponse(data=db_division)
 
 
-@router.put("/{pk}", response_model=RegionDivisionResponse)
-async def update_division(pk: int, division: RegionDivisionUpdate, db: Session = Depends(dbs),
-                          user: TokenData = Security(current_user_security, scopes=scopes)):
+@router.put("/{sec}", response_model=StatusResponse)
+async def update_division(sec: int, division: CreateUpdate, db: Session = Depends(dbs),
+                        user: TokenData = Security(current_user_security, scopes=scopes)):
     """
-    根据pk 修改区域事业部内容
-    :param pk:
+    根据sec 修改区域事业部内容
+    :param sec:
     :param division:
     :param db:
     :param user:
     :return:
     """
-    from .crud import update_division, get_division_by_pk
-    db_division = get_division_by_pk(db=db, pk=pk, sub_id=user.sub_id)
+    from .crud import update_division, get_division_by_sec
+    db_division = get_division_by_sec(db=db, sec=sec, sub_id=user.sub_id)
     if db_division is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Division not found")
-    return update_division(db=db, division=division, pk=pk, sub_id=user.sub_id)
+    update_division(db=db, division=division, sec=sec, sub_id=user.sub_id)
+    return StatusResponse()
 
 
-@router.delete("/{pk}")
-async def delete_division(pk: int, db: Session = Depends(dbs),
-                          user: TokenData = Security(current_user_security, scopes=scopes)):
-    from .crud import delete_division
-    return delete_division(db=db, pk=pk, sub_id=user.sub_id)
+@router.delete("/", response_model=StatusResponse)
+async def delete_division(sec: List[int], db: Session = Depends(dbs),
+                        user: TokenData = Security(current_user_security, scopes=scopes)):
+    """
+    根据sec 删除区域事业部
+    :param sec:
+    :param db:
+    :param user:
+    :return:
+    """
+    from .crud import delete_divisions
+    delete_divisions(db=db, sec=sec, sub_id=user.sub_id)
+    return StatusResponse()

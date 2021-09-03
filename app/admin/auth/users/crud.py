@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 
-from .schemas import AuthUserCreate, AuthUserUpdate
+from .schemas import AuthUserCreate, AuthUserUpdate, AuthUserPatch
 from ..models import AuthUser
 
 
@@ -22,6 +22,19 @@ def get_auth_users(db: Session, skip: int = 0, limit: int = 10, sub_id=None):
     ).offset(skip).limit(limit).all()
 
 
+def get_model_sec(db: Session, sub_id):
+    """
+    获取当前模型 主体 id
+    :param db:
+    :param sub_id:
+    :return:
+    """
+    model = db.query(AuthUser).filter(
+        AuthUser.sub_id == sub_id
+    ).order_by(AuthUser.id.desc()).first()
+    return model.sec_id + 1 if model else 1
+
+
 def get_paginate_auth_users(db: Session, skip: int = 0, limit: int = 10, sub_id=None):
     import math
     if sub_id:
@@ -34,8 +47,7 @@ def get_paginate_auth_users(db: Session, skip: int = 0, limit: int = 10, sub_id=
         ).count()
 
     pages = math.ceil(count / limit)
-    return {"total": count, "pages": pages, "skip": skip, "limit": limit,
-            "data": get_auth_users(db=db, skip=skip, limit=limit, sub_id=sub_id)}
+    return get_auth_users(db=db, skip=skip, limit=limit, sub_id=sub_id), count, pages
 
 
 def get_auth_user_by_pk(db: Session, pk: int, sub_id=None):
@@ -65,22 +77,24 @@ def get_auth_user_by_name(db: Session, name: str, sub_id=None):
     """
     if sub_id:
         return db.query(AuthUser).filter(
-            AuthUser.sub_id == sub_id, AuthUser.name == name, AuthUser.deleted_at.is_(None)
+            AuthUser.sub_id == sub_id, AuthUser.username == name, AuthUser.deleted_at.is_(None)
         ).first()
     return db.query(AuthUser).filter(
-        AuthUser.name == name, AuthUser.deleted_at.is_(None)
+        AuthUser.username == name, AuthUser.deleted_at.is_(None)
     ).first()
 
 
-def create_auth_user(db: Session, auth_user: AuthUserCreate, sub_id=None):
+def create_auth_user(db: Session, auth_user: AuthUserCreate):
     """
     创建 授权用户
     :param db:
     :param auth_user:
-    :param sub_id:
     :return:
     """
-    db_auth_user = AuthUser(**auth_user.dict())
+    from ..defs import token_get_password_hash
+    sec_id = get_model_sec(db=db, sub_id=auth_user.sub_id)
+    auth_user.password = token_get_password_hash(auth_user.password)
+    db_auth_user = AuthUser(**auth_user.dict(), sec_id=sec_id)
     db.add(db_auth_user)
     db.commit()
     db.refresh(db_auth_user)
@@ -96,14 +110,17 @@ def update_auth_user(db: Session, auth_user: AuthUserUpdate, pk: int, sub_id=Non
     :param sub_id:
     :return:
     """
+    from ..defs import token_get_password_hash
+    auth_user.password = token_get_password_hash(auth_user.password)
+
     if sub_id:
         db.query(AuthUser).filter(
             AuthUser.sub_id == sub_id, AuthUser.id == pk, AuthUser.deleted_at.is_(None)
-        ).update(auth_user.dict()), db.commit(), db.close()
-        return get_auth_user_by_pk(db=db, pk=pk, sub_id=sub_id)
-    db.query(AuthUser).filter(
-        AuthUser.id == pk, AuthUser.deleted_at.is_(None)
-    ).update(auth_user.dict()), db.commit(), db.close()
+        ).update(auth_user.dict(exclude_unset=True)), db.commit(), db.close()
+    else:
+        db.query(AuthUser).filter(
+            AuthUser.id == pk, AuthUser.deleted_at.is_(None)
+        ).update(auth_user.dict(exclude_unset=True)), db.commit(), db.close()
     return get_auth_user_by_pk(db=db, pk=pk, sub_id=sub_id)
 
 

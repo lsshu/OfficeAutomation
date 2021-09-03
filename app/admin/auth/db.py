@@ -4,8 +4,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# SQLALCHEMY_DATABASE_URL = 'sqlite:///{}'.format(os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "db.sqlite3"))
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:root@192.168.1.3:3306/oa"  # MySQL或PostgreSQL的连接方法
+from .defs import read_config
+
+SQLALCHEMY_DATABASE_URL = read_config('database', 'SQLALCHEMY_DATABASE_URL')  # MySQL或PostgreSQL的连接方法
 
 Engine = create_engine(
     # echo=True表示引擎将用repr()函数记录所有语句及其参数列表到日志
@@ -13,7 +14,9 @@ Engine = create_engine(
     SQLALCHEMY_DATABASE_URL, encoding='utf-8',
     echo=True,
     pool_pre_ping=True,
-    pool_size=100, pool_recycle=3600, max_overflow=100,
+    pool_size=100,
+    pool_recycle=3600,
+    max_overflow=100,
     connect_args={
         # 'check_same_thread': False,
         "charset": "utf8mb4"

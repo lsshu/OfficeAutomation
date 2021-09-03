@@ -1,9 +1,10 @@
-from datetime import datetime
 from pydantic import BaseModel
 from typing import Optional, List
 
+from app.admin.auth.schemas import StatusResponse
 
-class MemberAgeGroupCreate(BaseModel):
+
+class CreateUpdate(BaseModel):
     """创建年龄段"""
     name: str
     sub_id: Optional[int] = None
@@ -12,17 +13,10 @@ class MemberAgeGroupCreate(BaseModel):
         orm_mode = True
 
 
-class MemberAgeGroupUpdate(BaseModel):
-    """更新年龄段"""
-    name: str
-
-    class Config:
-        orm_mode = True
-
-
-class MemberAgeGroupResponse(BaseModel):
+class ModelResponse(BaseModel):
     """年龄段返回"""
-    id: int
+    from datetime import datetime
+    sec_id: int
     name: str
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -31,10 +25,15 @@ class MemberAgeGroupResponse(BaseModel):
         orm_mode = True
 
 
-class MemberAgeGroupPaginateResponse(BaseModel):
+class ModelStatusResponse(StatusResponse):
+    """年龄段状态返回"""
+    data: ModelResponse
+
+
+class PaginateStatusResponse(StatusResponse):
     """年龄段分页返回"""
-    total: Optional[int] = None
+    count: Optional[int] = None
     pages: Optional[int] = None
     skip: Optional[int] = None
     limit: Optional[int] = None
-    data: List[MemberAgeGroupResponse]
+    data: List[ModelResponse]

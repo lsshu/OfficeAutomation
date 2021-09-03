@@ -37,6 +37,19 @@ class MemberSource(Model):
     deleted_at = Column(TIMESTAMP, nullable=True, comment="删除日期")
 
 
+class MemberType(Model):
+    """加粉类别"""
+    __tablename__ = "member_types"
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    sec_id = Column(Integer, index=True, comment='次要id')
+    sub_id = Column(Integer, ForeignKey('auth_subjects.id'), comment='主体')
+    subject = relationship('AuthSubject', backref='member_types')
+    name = Column(String(15), nullable=True, comment="名称")
+    created_at = Column(TIMESTAMP, nullable=True, default=datetime.now, comment="创建日期")
+    updated_at = Column(TIMESTAMP, nullable=True, default=datetime.now, onupdate=datetime.now, comment="更新日期")
+    deleted_at = Column(TIMESTAMP, nullable=True, comment="删除日期")
+
+
 class MemberQualityType(Model):
     """粉质量类别"""
     __tablename__ = "member_quality_types"
@@ -58,20 +71,22 @@ class MemberUser(Model):
     sub_id = Column(Integer, ForeignKey('auth_subjects.id'), comment='主体')
     subject = relationship('AuthSubject', backref='member_users')
     com_id = Column(Integer, ForeignKey('region_companies.id'), comment='公司')
-    company = relationship('RegionCompany', backref='member_users')
+    company = relationship('RegionCompany', backref='member_users', lazy="joined")
     div_id = Column(Integer, ForeignKey('region_divisions.id'), comment='事业部')
-    division = relationship('RegionDivision', backref='member_users')
+    division = relationship('RegionDivision', backref='member_users', lazy="joined")
     mar_id = Column(Integer, ForeignKey('region_markets.id'), comment='市场')
-    market = relationship('RegionMarket', backref='member_users')
+    market = relationship('RegionMarket', backref='member_users', lazy="joined")
     own_id = Column(Integer, ForeignKey('auth_users.id'), comment='账号')
-    owner = relationship('AuthUser', backref='member_users')
+    owner = relationship('AuthUser', backref='member_users', lazy="joined")
 
     age_id = Column(Integer, ForeignKey('member_age_groups.id'), comment='年龄段')
-    age = relationship('MemberAgeGroup', backref='member_users')
+    age = relationship('MemberAgeGroup', backref='member_users', lazy="joined")
     sou_id = Column(Integer, ForeignKey('member_sources.id'), comment='添加方式')
-    source = relationship('MemberSource', backref='member_users')
+    source = relationship('MemberSource', backref='member_users', lazy="joined")
     qua_id = Column(Integer, ForeignKey('member_quality_types.id'), comment='粉质量类别')
-    quality = relationship('MemberQualityType', backref='member_users')
+    quality = relationship('MemberQualityType', backref='member_users', lazy="joined")
+    typ_id = Column(Integer, ForeignKey('member_types.id'), comment='加粉类别')
+    type = relationship('MemberType', backref='member_users', lazy="joined")
 
     own_wx = Column(String(15), nullable=True, comment="所属微信")
     username = Column(String(15), nullable=True, comment="客户")

@@ -11,7 +11,7 @@ def read_config(group, key, **kwargs):
     conn = ConfigParser()
     file_path = kwargs.get('file_path', os.path.join(os.path.abspath('.'), 'config.ini'))
     if not os.path.exists(file_path):
-        raise FileNotFoundError("文件不存在")
+        raise FileNotFoundError("%s 文件不存在" % file_path)
     conn.read(file_path, encoding="utf8")
     return conn.get(group, key)
 
@@ -102,7 +102,7 @@ def token_verify_password(plain_password: str, hashed_password: str):
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def token_get_password_hash(password):
+def token_get_password_hash(password: str):
     """
     给 oauth user 加密
     :param password: 加密密码
@@ -167,6 +167,6 @@ def token_payload(security_scopes, token, key, algorithm):
 
 def verification_sub_id(mode, user):
     """验证接收体sub id 与 授权 sub id"""
-    if mode.sub_id:
+    if not mode.sub_id:
         mode.sub_id = user.sub_id
     return mode

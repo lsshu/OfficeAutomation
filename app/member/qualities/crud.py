@@ -1,129 +1,120 @@
 from sqlalchemy.orm import Session
 
-from .schemas import MemberQualityTypeCreate, MemberQualityTypeUpdate
+from .schemas import CreateUpdate
 from ..models import MemberQualityType
 
 
-def get_quality_types(db: Session, skip: int = 0, limit: int = 10, sub_id=None):
+def get_quality_types(db: Session, page: int = 1, limit: int = 10, sub_id=None, name=None):
     """
-    获取 粉质量类别列表
+    获取 加粉质量列表
     :param db:
-    :param skip:
+    :param page:
     :param limit:
     :param sub_id:
+    :param name:
     :return:
     """
-    if sub_id:
-        return db.query(MemberQualityType).filter(
-            MemberQualityType.sub_id == sub_id, MemberQualityType.deleted_at.is_(None)
-        ).offset(skip).limit(limit).all()
-    return db.query(MemberQualityType).filter(
-        MemberQualityType.deleted_at.is_(None)
+    skip = (page - 1) * limit
+    q = db.query(MemberQualityType)
+    if name:
+        q = q.filter(MemberQualityType.name.like("%" + name + "%"))
+    return q.filter(
+        MemberQualityType.sub_id == sub_id, MemberQualityType.deleted_at.is_(None)
     ).offset(skip).limit(limit).all()
 
 
-def get_paginate_quality_types(db: Session, skip: int = 0, limit: int = 10, sub_id=None):
-    import math
-    if sub_id:
-        count = db.query(MemberQualityType).filter(
-            MemberQualityType.sub_id == sub_id, MemberQualityType.deleted_at.is_(None)
-        ).count()
-    else:
-        count = db.query(MemberQualityType).filter(
-            MemberQualityType.deleted_at.is_(None)
-        ).count()
-
-    pages = math.ceil(count / limit)
-    return {"total": count, "pages": pages, "skip": skip, "limit": limit,
-            "data": get_quality_types(db=db, skip=skip, limit=limit, sub_id=sub_id)}
-
-
-def get_quality_type_by_pk(db: Session, pk: int, sub_id=None):
+def get_model_sec(db: Session, sub_id):
     """
-    根据主键 获取粉质量类别
+    获取当前模型 主体 id
     :param db:
-    :param pk:
     :param sub_id:
     :return:
     """
-    if sub_id:
-        return db.query(MemberQualityType).filter(
-            MemberQualityType.sub_id == sub_id, MemberQualityType.id == pk, MemberQualityType.deleted_at.is_(None)
-        ).first()
+    model = db.query(MemberQualityType).filter(
+        MemberQualityType.sub_id == sub_id
+    ).order_by(MemberQualityType.id.desc()).first()
+    return model.sec_id + 1 if model else 1
+
+
+def get_paginate_quality_types(db: Session, page: int = 1, limit: int = 10, sub_id=None, name=None):
+    import math
+    q = db.query(MemberQualityType)
+    if name:
+        q = q.filter(MemberQualityType.name.like("%" + name + "%"))
+    count = q.filter(
+        MemberQualityType.sub_id == sub_id, MemberQualityType.deleted_at.is_(None)
+    ).count()
+
+    pages = math.ceil(count / limit)
+    return get_quality_types(db=db, page=page, limit=limit, sub_id=sub_id, name=name), count, pages
+
+
+def get_quality_type_by_sec(db: Session, sec: int, sub_id=None):
+    """
+    根据主键 获取加粉质量
+    :param db:
+    :param sec:
+    :param sub_id:
+    :return:
+    """
     return db.query(MemberQualityType).filter(
-        MemberQualityType.id == pk, MemberQualityType.deleted_at.is_(None)
+        MemberQualityType.sub_id == sub_id, MemberQualityType.sec_id == sec, MemberQualityType.deleted_at.is_(None)
     ).first()
 
 
 def get_quality_type_by_name(db: Session, name: str, sub_id=None):
     """
-    根据名称 获取粉质量类别
+    根据名称 获取加粉质量
     :param db:
     :param name:
     :param sub_id:
     :return:
     """
-    if sub_id:
-        return db.query(MemberQualityType).filter(
-            MemberQualityType.sub_id == sub_id, MemberQualityType.name == name, MemberQualityType.deleted_at.is_(None)
-        ).first()
     return db.query(MemberQualityType).filter(
-        MemberQualityType.name == name, MemberQualityType.deleted_at.is_(None)
+        MemberQualityType.sub_id == sub_id, MemberQualityType.name == name, MemberQualityType.deleted_at.is_(None)
     ).first()
 
 
-def create_quality_type(db: Session, quality_type: MemberQualityTypeCreate, sub_id=None):
+def create_quality_type(db: Session, quality_type: CreateUpdate):
     """
-    创建 粉质量类别
+    创建 加粉质量
     :param db:
     :param quality_type:
-    :param sub_id:
     :return:
     """
-    db_quality_type = MemberQualityType(**quality_type.dict())
+    sec_id = get_model_sec(db=db, sub_id=quality_type.sub_id)
+    db_quality_type = MemberQualityType(**quality_type.dict(), sec_id=sec_id)
     db.add(db_quality_type)
     db.commit()
     db.refresh(db_quality_type)
     return db_quality_type
 
 
-def update_quality_type(db: Session, quality_type: MemberQualityTypeUpdate, pk: int, sub_id=None):
+def update_quality_type(db: Session, quality_type: CreateUpdate, sec: int, sub_id=None):
     """
-    修改 粉质量类别
+    修改 加粉质量
     :param db:
     :param quality_type:
-    :param pk:
+    :param sec:
     :param sub_id:
     :return:
     """
-    if sub_id:
-        db.query(MemberQualityType).filter(
-            MemberQualityType.sub_id == sub_id, MemberQualityType.id == pk, MemberQualityType.deleted_at.is_(None)
-        ).update(quality_type.dict()), db.commit(), db.close()
-        return get_quality_type_by_pk(db=db, pk=pk, sub_id=sub_id)
-    db.query(MemberQualityType).filter(
-        MemberQualityType.id == pk, MemberQualityType.deleted_at.is_(None)
-    ).update(quality_type.dict()), db.commit(), db.close()
-    return get_quality_type_by_pk(db=db, pk=pk, sub_id=sub_id)
+    return db.query(MemberQualityType).filter(
+        MemberQualityType.sub_id == sub_id, MemberQualityType.sec_id == sec, MemberQualityType.deleted_at.is_(None)
+    ).update(quality_type.dict(exclude_unset=True)), db.commit(), db.close()
 
 
-def delete_quality_type(db: Session, pk: int, sub_id=None):
+def delete_quality_types(db: Session, sec: list, sub_id=None):
     """
-    删除粉质量类别 修改删除时间
+    删除加粉质量 修改删除时间
     :param db:
-    :param pk:
+    :param sec:
     :param sub_id:
     :return:
     """
     from datetime import datetime
-    if sub_id:
-        response = db.query(MemberQualityType).filter(
-            MemberQualityType.sub_id == sub_id, MemberQualityType.id == pk, MemberQualityType.deleted_at.is_(None)
-        ).update({"deleted_at": datetime.now()})
-        db.commit(), db.close()
-        return response
     response = db.query(MemberQualityType).filter(
-        MemberQualityType.id == pk, MemberQualityType.deleted_at.is_(None)
+        MemberQualityType.sub_id == sub_id, MemberQualityType.sec_id.in_(sec), MemberQualityType.deleted_at.is_(None)
     ).update({"deleted_at": datetime.now()})
     db.commit(), db.close()
     return response

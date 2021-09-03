@@ -1,57 +1,64 @@
 from sqlalchemy.orm import Session
 
-from .schemas import RegionCompanyCreate, RegionCompanyUpdate
+from .schemas import CreateUpdate
 from ..models import RegionCompany
 
 
-def get_companies(db: Session, skip: int = 0, limit: int = 10, sub_id=None):
+def get_companies(db: Session, page: int = 1, limit: int = 10, sub_id=None, name=None):
     """
     获取 区域公司列表
     :param db:
-    :param skip:
+    :param page:
     :param limit:
     :param sub_id:
+    :param name:
     :return:
     """
-    if sub_id:
-        return db.query(RegionCompany).filter(
-            RegionCompany.sub_id == sub_id, RegionCompany.deleted_at.is_(None)
-        ).offset(skip).limit(limit).all()
-    return db.query(RegionCompany).filter(
-        RegionCompany.deleted_at.is_(None)
+    skip = (page - 1) * limit
+    q = db.query(RegionCompany)
+    if name:
+        q = q.filter(RegionCompany.name.like("%" + name + "%"))
+    return q.filter(
+        RegionCompany.sub_id == sub_id, RegionCompany.deleted_at.is_(None)
     ).offset(skip).limit(limit).all()
 
 
-def get_paginate_companies(db: Session, skip: int = 0, limit: int = 10, sub_id=None):
-    import math
-    if sub_id:
-        count = db.query(RegionCompany).filter(
-            RegionCompany.sub_id == sub_id, RegionCompany.deleted_at.is_(None)
-        ).count()
-    else:
-        count = db.query(RegionCompany).filter(
-            RegionCompany.deleted_at.is_(None)
-        ).count()
-
-    pages = math.ceil(count / limit)
-    return {"total": count, "pages": pages, "skip": skip, "limit": limit,
-            "data": get_companies(db=db, skip=skip, limit=limit, sub_id=sub_id)}
-
-
-def get_company_by_pk(db: Session, pk: int, sub_id=None):
+def get_model_sec(db: Session, sub_id):
     """
-    根据主键 获取区域公司
+    获取当前模型 主体 id
     :param db:
-    :param pk:
     :param sub_id:
     :return:
     """
-    if sub_id:
-        return db.query(RegionCompany).filter(
-            RegionCompany.sub_id == sub_id, RegionCompany.id == pk, RegionCompany.deleted_at.is_(None)
-        ).first()
+    model = db.query(RegionCompany).filter(
+        RegionCompany.sub_id == sub_id
+    ).order_by(RegionCompany.id.desc()).first()
+    return model.sec_id + 1 if model else 1
+
+
+def get_paginate_companies(db: Session, page: int = 1, limit: int = 10, sub_id=None, name=None):
+    import math
+    q = db.query(RegionCompany)
+    if name:
+        q = q.filter(RegionCompany.name.like("%" + name + "%"))
+    count = q.filter(
+        RegionCompany.sub_id == sub_id, RegionCompany.deleted_at.is_(None)
+    ).count()
+
+    pages = math.ceil(count / limit)
+    return get_companies(db=db, page=page, limit=limit, sub_id=sub_id, name=name), count, pages
+
+
+def get_company_by_sec(db: Session, sec: int, sub_id=None):
+    """
+    根据主键 获取区域公司
+    :param db:
+    :param sec:
+    :param sub_id:
+    :return:
+    """
     return db.query(RegionCompany).filter(
-        RegionCompany.id == pk, RegionCompany.deleted_at.is_(None)
+        RegionCompany.sub_id == sub_id, RegionCompany.sec_id == sec, RegionCompany.deleted_at.is_(None)
     ).first()
 
 
@@ -63,67 +70,51 @@ def get_company_by_name(db: Session, name: str, sub_id=None):
     :param sub_id:
     :return:
     """
-    if sub_id:
-        return db.query(RegionCompany).filter(
-            RegionCompany.sub_id == sub_id, RegionCompany.name == name, RegionCompany.deleted_at.is_(None)
-        ).first()
     return db.query(RegionCompany).filter(
-        RegionCompany.name == name, RegionCompany.deleted_at.is_(None)
+        RegionCompany.sub_id == sub_id, RegionCompany.name == name, RegionCompany.deleted_at.is_(None)
     ).first()
 
 
-def create_company(db: Session, company: RegionCompanyCreate, sub_id=None):
+def create_company(db: Session, company: CreateUpdate):
     """
     创建 区域公司
     :param db:
     :param company:
-    :param sub_id:
     :return:
     """
-    db_company = RegionCompany(**company.dict())
+    sec_id = get_model_sec(db=db, sub_id=company.sub_id)
+    db_company = RegionCompany(**company.dict(), sec_id=sec_id)
     db.add(db_company)
     db.commit()
     db.refresh(db_company)
     return db_company
 
 
-def update_company(db: Session, company: RegionCompanyUpdate, pk: int, sub_id=None):
+def update_company(db: Session, company: CreateUpdate, sec: int, sub_id=None):
     """
     修改 区域公司
     :param db:
     :param company:
-    :param pk:
+    :param sec:
     :param sub_id:
     :return:
     """
-    if sub_id:
-        db.query(RegionCompany).filter(
-            RegionCompany.sub_id == sub_id, RegionCompany.id == pk, RegionCompany.deleted_at.is_(None)
-        ).update(company.dict()), db.commit(), db.close()
-        return get_company_by_pk(db=db, pk=pk, sub_id=sub_id)
-    db.query(RegionCompany).filter(
-        RegionCompany.id == pk, RegionCompany.deleted_at.is_(None)
-    ).update(company.dict()), db.commit(), db.close()
-    return get_company_by_pk(db=db, pk=pk, sub_id=sub_id)
+    return db.query(RegionCompany).filter(
+        RegionCompany.sub_id == sub_id, RegionCompany.sec_id == sec, RegionCompany.deleted_at.is_(None)
+    ).update(company.dict(exclude_unset=True)), db.commit(), db.close()
 
 
-def delete_company(db: Session, pk: int, sub_id=None):
+def delete_companies(db: Session, sec: list, sub_id=None):
     """
     删除区域公司 修改删除时间
     :param db:
-    :param pk:
+    :param sec:
     :param sub_id:
     :return:
     """
     from datetime import datetime
-    if sub_id:
-        response = db.query(RegionCompany).filter(
-            RegionCompany.sub_id == sub_id, RegionCompany.id == pk, RegionCompany.deleted_at.is_(None)
-        ).update({"deleted_at": datetime.now()})
-        db.commit(), db.close()
-        return response
     response = db.query(RegionCompany).filter(
-        RegionCompany.id == pk, RegionCompany.deleted_at.is_(None)
+        RegionCompany.sub_id == sub_id, RegionCompany.sec_id.in_(sec), RegionCompany.deleted_at.is_(None)
     ).update({"deleted_at": datetime.now()})
     db.commit(), db.close()
     return response

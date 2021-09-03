@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from app.admin.main import router as admin_router
 from app.member.main import router as member_route
 from app.region.main import router as region_route
@@ -7,6 +8,17 @@ app = FastAPI(
     title='Office Automation API Docs',
     description='Office Automation API接口文档',
     version='1.0.0'
+)
+origins = [
+    "*",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(admin_router, prefix='/api')

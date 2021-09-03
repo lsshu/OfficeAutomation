@@ -10,9 +10,7 @@ except:
 
 
 class AuthSubject(Model):
-    """
-    主体
-    """
+    """主体"""
     __tablename__ = "auth_subjects"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     name = Column(String(15), nullable=False, comment="名称")
@@ -26,9 +24,7 @@ class AuthSubject(Model):
 
 
 class AuthUser(Model):
-    """
-    登录用户
-    """
+    """登录用户"""
     __tablename__ = "auth_users"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     sec_id = Column(Integer, index=True, comment='次要id')
@@ -38,7 +34,7 @@ class AuthUser(Model):
 
     username = Column(String(15), nullable=False, unique=True, index=True, comment="名称")
     password = Column(String(128), nullable=False, comment="密码")
-    available = Column(Boolean, default=True, comment="是否有效")
+    available = Column(Boolean, default=1, comment="是否有效")
     permissions = relationship('AuthPermissions', backref='auth_users', secondary=Table(
         'auth_user_has_permissions',  # 第三张表名
         Model.metadata,  # 元类的数据
@@ -57,9 +53,7 @@ class AuthUser(Model):
 
 
 class AuthRoles(Model):
-    """
-    角色
-    """
+    """角色"""
     __tablename__ = "auth_roles"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     sec_id = Column(Integer, index=True, comment='次要id')
@@ -79,9 +73,7 @@ class AuthRoles(Model):
 
 
 class AuthPermissions(Model):
-    """
-    权限
-    """
+    """ 权限 """
     __tablename__ = "auth_permissions"
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     sec_id = Column(Integer, index=True, comment='次要id')
